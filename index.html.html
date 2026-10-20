@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Captain’s Stability Calculator</title>
+<style>
+:root{--bg:#e6edf2;--panel:#f6f9fb;--ink:#0f2a43;--mute:#566c80;--line:#c3d1dc;--accent:#0f4c75;--ok:#17703f;--okbg:#dcf1e4;--warn:#9a5f00;--warnbg:#faebc6;--bad:#b3261e;--badbg:#f8dad7;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#0b1722;--panel:#12273a;--ink:#e4edf4;--mute:#93a9bb;--line:#26425a;--accent:#6fb7e8;--ok:#6fd49b;--okbg:#123625;--warn:#f0bd5a;--warnbg:#3a2d0f;--bad:#ff8d85;--badbg:#3d1a18}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0b1722;--panel:#12273a;--ink:#e4edf4;--mute:#93a9bb;--line:#26425a;--accent:#6fb7e8;--ok:#6fd49b;--okbg:#123625;--warn:#f0bd5a;--warnbg:#3a2d0f;--bad:#ff8d85;--badbg:#3d1a18}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:920px;margin:0 auto;padding:24px 16px 40px}
+h1{font:700 clamp(1.6rem,5vw,2.3rem)/1.15 Georgia,"Times New Roman",serif;margin:0 0 4px}
+.sub{color:var(--mute);margin:0 0 20px}
+.grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+@media(min-width:760px){.grid{grid-template-columns:minmax(0,5fr) minmax(0,6fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:16px}
+h2{font:700 1.1rem Georgia,serif;margin:0 0 12px}
+label{display:block;font-size:.88rem;color:var(--mute);margin:10px 0 3px}
+input{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:8px 10px}
+input:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cargo{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr) minmax(0,1fr) auto;gap:6px;margin-top:8px;align-items:center}
+button{font:inherit;cursor:pointer;border-radius:6px;border:1px solid var(--accent);background:transparent;color:var(--accent);padding:8px 12px}
+button.add{margin-top:12px;width:100%}
+button.x{padding:6px 10px;border-color:var(--line);color:var(--mute)}
+.verdict{border-radius:8px;padding:12px 14px;font-weight:600;margin-bottom:14px}
+.verdict.ok{background:var(--okbg);color:var(--ok)}
+.verdict.warn{background:var(--warnbg);color:var(--warn)}
+.verdict.bad{background:var(--badbg);color:var(--bad)}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.stat{border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.stat span{display:block;font-size:.8rem;color:var(--mute)}
+.stat b{font:700 1.35rem Georgia,serif}
+svg{width:100%;height:auto;display:block}
+.ax{stroke:var(--line);stroke-width:1}
+.zero{stroke:var(--ink);stroke-width:1.2}
+.tx{fill:var(--mute);font-size:11px;font-family:system-ui,sans-serif}
+.curve{fill:none;stroke-width:3}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;margin-top:10px;font-variant-numeric:tabular-nums}
+th,td{text-align:right;padding:5px 8px;border-bottom:1px solid var(--line)}
+th{color:var(--mute);font-weight:600}
+.msg{color:var(--mute)}
+.note{color:var(--mute);font-size:.85rem;margin-top:18px}
+</style>
+</head>
+<body>
+<main>
+<h1 id="title">Captain Dev’s Stability Calculator</h1>
+<p class="sub">Enter a box-shaped ship, add cargo, and see if she stays upright.</p>
+
+<div class="grid">
+  <section class="panel">
+    <h2>Ship</h2>
+    <label for="cap">Captain’s name</label>
+    <input id="cap" value="Dev" autocomplete="off">
+    <label for="name">Ship name</label>
+    <input id="name" value="MV Dev" autocomplete="off">
+    <div class="row2">
+      <div><label for="L">Length (m)</label><input id="L" type="number" inputmode="decimal" min="0" step="any" value="100"></div>
+      <div><label for="B">Beam (m)</label><input id="B" type="number" inputmode="decimal" min="0" step="any" value="20"></div>
+      <div><label for="KG">Empty KG (m)</label><input id="KG" type="number" inputmode="decimal" min="0" step="any" value="7"></div>
+      <div><label for="W">Empty weight (tonnes)</label><input id="W" type="number" inputmode="decimal" min="0" step="any" value="10000"></div>
+    </div>
+    <h2 style="margin-top:20px">Cargo</h2>
+    <div id="cargoList"></div>
+    <button class="add" id="addCargo" type="button">Add cargo</button>
+  </section>
+
+  <section class="panel" aria-live="polite">
+    <h2>Report</h2>
+    <div id="out"></div>
+  </section>
+</div>
+
+<p class="note">A learning tool: it assumes a box-shaped hull and uses GZ = GM × sin(heel), which is only accurate for small angles. Never use it for real loading or sailing decisions.</p>
+</main>
+
+<script>
+const RHO = 1.025; // seawater, tonnes per cubic metre
+const $ = id => document.getElementById(id);
+
+function verdict(gm, cap) {
+  if (gm <= 0) return {cls: "bad", text: "UNSTABLE: Captain " + cap + ", stop loading! She’ll capsize!"};
+  if (gm < 0.15) return {cls: "warn", text: "MARGINAL: careful, Captain " + cap + ". She’s dangerously tender."};
+  return {cls: "ok", text: "STABLE: smooth sailing, Captain " + cap + "!"};
+}
+
+function addCargoRow(name, w, h) {
+  const row = document.createElement("div");
+  row.className = "cargo";
+  row.innerHTML =
+    '<input class="cn" placeholder="Cargo name" aria-label="Cargo name">' +
+    '<input class="cw" type="number" inputmode="decimal" min="0" step="any" placeholder="Tonnes" aria-label="Cargo weight in tonnes">' +
+    '<input class="ch" type="number" inputmode="decimal" min="0" step="any" placeholder="Height m" aria-label="Cargo height above keel in metres">' +
+    '<button class="x" type="button" aria-label="Remove cargo">×</button>';
+  row.querySelector(".cn").value = name || "";
+  row.querySelector(".cw").value = w || "";
+  row.querySelector(".ch").value = h || "";
+  row.querySelector(".x").onclick = () => { row.remove(); render(); };
+  $("cargoList").appendChild(row);
+}
+
+function chart(gm, color) {
+  const W = 480, H = 250, l = 46, r = 14, t = 14, b = 36;
+  const angles = [];
+  for (let a = 0; a <= 40; a += 2) angles.push(a);
+  const gz = angles.map(a => gm * Math.sin(a * Math.PI / 180));
+  const ymax = Math.max(0.1, ...gz), ymin = Math.min(0, ...gz);
+  const X = a => l + (a / 40) * (W - l - r);
+  const Y = v => t + (ymax - v) / (ymax - ymin) * (H - t - b);
+  let s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="GZ righting arm curve against heel angle">';
+  for (let a = 0; a <= 40; a += 10) {
+    s += '<line class="ax" x1="' + X(a) + '" x2="' + X(a) + '" y1="' + t + '" y2="' + (H - b) + '"/>' +
+         '<text class="tx" x="' + X(a) + '" y="' + (H - 18) + '" text-anchor="middle">' + a + '°</text>';
+  }
+  s += '<line class="zero" x1="' + l + '" x2="' + (W - r) + '" y1="' + Y(0) + '" y2="' + Y(0) + '"/>';
+  s += '<text class="tx" x="' + (l - 6) + '" y="' + (Y(0) + 4) + '" text-anchor="end">0</text>';
+  s += '<text class="tx" x="' + (l - 6) + '" y="' + (Y(ymax) + 4) + '" text-anchor="end">' + ymax.toFixed(2) + '</text>';
+  if (ymin < 0) s += '<text class="tx" x="' + (l - 6) + '" y="' + (Y(ymin) + 4) + '" text-anchor="end">' + ymin.toFixed(2) + '</text>';
+  s += '<text class="tx" x="' + (W / 2) + '" y="' + (H - 3) + '" text-anchor="middle">Heel angle (degrees), GZ in metres</text>';
+  s += '<polyline class="curve" stroke="' + color + '" points="' + angles.map((a, i) => X(a).toFixed(1) + "," + Y(gz[i]).toFixed(1)).join(" ") + '"/>';
+  return s + "</svg>";
+}
+
+function render() {
+  const cap = $("cap").value.trim() || "Dev";
+  const name = $("name").value.trim() || "MV " + cap;
+  $("title").textContent = "Captain " + cap + "’s Stability Calculator";
+  const L = parseFloat($("L").value), B = parseFloat($("B").value);
+  const KG = parseFloat($("KG").value), W = parseFloat($("W").value);
+  const out = $("out");
+  if (!(L > 0 && B > 0 && KG > 0 && W > 0)) {
+    out.innerHTML = '<p class="msg">Enter a length, beam, KG and weight above zero to see the report.</p>';
+    return;
+  }
+  let totalW = W, moment = W * KG;
+  document.querySelectorAll(".cargo").forEach(row => {
+    const w = parseFloat(row.querySelector(".cw").value), h = parseFloat(row.querySelector(".ch").value);
+    if (w > 0 && h > 0) { totalW += w; moment += w * h; }
+  });
+  const draft = totalW / (RHO * L * B);
+  const kg = moment / totalW;
+  const gm = draft / 2 + (B * B) / (12 * draft) - kg;
+  const v = verdict(gm, cap);
+  const color = v.cls === "ok" ? "var(--ok)" : v.cls === "warn" ? "var(--warn)" : "var(--bad)";
+  let rows = "";
+  for (let a = 0; a <= 40; a += 10) rows += "<tr><td>" + a + "</td><td>" + (gm * Math.sin(a * Math.PI / 180)).toFixed(2) + "</td></tr>";
+  out.innerHTML =
+    '<div class="verdict ' + v.cls + '"></div>' +
+    '<div class="stats">' +
+    '<div class="stat"><span>GM (metres)</span><b>' + gm.toFixed(2) + '</b></div>' +
+    '<div class="stat"><span>Draft (metres)</span><b>' + draft.toFixed(2) + '</b></div>' +
+    '<div class="stat"><span>Loaded KG (metres)</span><b>' + kg.toFixed(2) + '</b></div>' +
+    '<div class="stat"><span>Total weight (tonnes)</span><b>' + Math.round(totalW) + '</b></div></div>' +
+    chart(gm, color) +
+    '<div class="scroll"><table><thead><tr><th>Heel (deg)</th><th>GZ (m)</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+  out.querySelector(".verdict").textContent = name + ": " + v.text;
+}
+
+document.querySelectorAll("#cap,#name,#L,#B,#KG,#W").forEach(el => el.addEventListener("input", render));
+$("cargoList").addEventListener("input", render);
+$("addCargo").onclick = () => { addCargoRow(); render(); };
+render();
+</script>
+</body>
+</html>
